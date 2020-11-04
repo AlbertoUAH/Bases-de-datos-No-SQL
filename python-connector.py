@@ -24,7 +24,7 @@ def prueba1():
             "$group": {"_id": {"Location": "$dist.location", "Airport": "$Airport.Name"}}
         }]
 
-    result = database.prueba.aggregate(pipe)
+    result = database.airports_modificado.aggregate(pipe)
     list_coordinates = [[item['_id']['Location']['coordinates'], item['_id']['Airport']] for item in result]
 
     m = folium.Map()
@@ -58,24 +58,27 @@ def prueba2():
             "near": { "type": "Point", "coordinates": coordinates },
             "distanceField": "dist.calculated",
             "key": "Position",
+            "maxDistance": 1000000,
             "includeLocs": "dist.location",
             "spherical": "true"
         }
     },
     {
         "$group": {
-            "_id": {"Location": "$dist.location", "Airport": "$Airport.Name"}, "minutos": {"$sum": "$Statistics.Minutes Delayed.Total"}, "vuelos": {"$sum": "$Statistics.Flights.Total"}
+            "_id": {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, 
+            "minutos": {"$sum": "$Statistics.Minutes Delayed.Total"}, 
+            "vuelos": {"$sum": "$Statistics.Flights.Total"}
         }
     },
     {
         "$project": {"_id": 1, "proporcion_minutos_vuelos": {"$divide": ["$minutos", "$vuelos"]}}
     },
     {
-        "$match": {"$expr": {"$lte": ["$proporcion_minutos_vuelos", 10]}}
+        "$match": {"$expr": {"$lte": ["$proporcion_minutos_vuelos", 9]}}
     }
     ]
-    result = database.prueba.aggregate(pipe)
-    list_coordinates = [[item['_id']['Location']['coordinates'], item['_id']['Airport'], item['proporcion_minutos_vuelos']] for item in result]
+    result = database.airports_modificado.aggregate(pipe)
+    list_coordinates = [[item['_id']['Location']['coordinates'], item['_id']['Airport'], item['proporcion_minutos_vuelos'], item['_id']['Distance']] for item in result]
 
     m = folium.Map()
     folium.Marker(
@@ -86,10 +89,17 @@ def prueba2():
 
     for coordinate in list_coordinates:
         folium.Marker(
-            location=coordinate[0][::-1], # coordinates for the marker (Earth Lab at CU Boulder)
-            popup=str(coordinate[1] + " - " + str(round(coordinate[2], 2))), # pop-up label for the marker
+            location=coordinate[0][::-1], 
+            popup=str(coordinate[1] + " - " + str(round(coordinate[2], 2))),
             icon=folium.Icon()
         ).add_to(m)
+        aux_list = [coordinates[::-1], coordinate[0][::-1]]
+        folium.PolyLine(
+            aux_list,
+            color = "red",
+            popup=str(round(coordinate[3]/1000, 2)) + " km."
+        ).add_to(m)
+        aux_list = []
     m.save('plot_data.html')
 
 prueba2()
