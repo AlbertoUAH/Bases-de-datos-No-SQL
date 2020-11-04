@@ -1,8 +1,16 @@
 use practica_final
 
-// Una vez descargado e importado el json, probamos a insertar un dato
+// Empezamos por unas consultas mas sencillas
+// Contar el numero de documentos
+db.airports.count()
+
+// ------------------------------------ PREPROCESAMIENTO ------------------------------------
+db.airports.updateMany({},{$unset: {"Time.Label": ""}})
+db.airports.updateMany({},{$unset: {"Time.Month Name": ""}})
+
+// Probamos a insertar un dato
 var aeropuerto = { "Code" : "SLC", "Name" : "Salt Lake City, UT: Salt Lake City International" }
-var tiempo = { "Label" : "2016/02",	"Month" : 1, "Month Name" : "January", "Year" : 2016 }
+var tiempo = { "Month" : 1, "Year" : 2016 }
 var demoras = { "Carrier" : 368, "Late Aircraft" : 549, "National Aviation System" : 253, "Security" : 9, "Weather" : 37 }
 var companias = {
 	"Names" : "American Airlines Inc.,Alaska Airlines Inc.,JetBlue Airways,Delta Air Lines Inc.,Frontier Airlines Inc.,SkyWest Airlines Inc.,United Air Lines Inc.,Southwest Airlines Co.",
@@ -13,62 +21,25 @@ var minutos_demora = { "Carrier" : 32066, "Late Aircraft" : 33682, "National Avi
 var estadisticas = { "# of Delays": demoras, "Carriers": companias, "Flights": vuelos, "Minutes Delayed" : minutos_demora}
 db.airports.insertOne({"Airport": aeropuerto, "Time": tiempo, "Statistics": estadisticas})
 
-// Empezamos por unas consultas mas sencillas
-// Contar el numero de documentos
-db.airports.count()
-
 // Para no afectar a las estadisticas y las consultas, lo volvemos a eliminar
-db.airports.remove({"Time.Label": {$eq: "2016/02"}})
-db.airports.count()
+db.airports.remove({"_id": {$eq: ObjectId("5fa2d4a72d8abb02bb66793e")}})
 
 // Renombramos el campo # of Delays a Delays
 db.airports.updateMany({}, {$rename: {"Statistics.# of Delays": "Statistics.Delays"}})
-
-// Funcion que recupera las estadisticas de vuelos en un anno, mes y codigo de aeropuerto dados
-// Se puede filtrar incluso por columnas
-function obtener_vuelos_mes_anno(mes, anno, codigo, columnas = {}) {
-    if (Object.keys(columnas).length == 0)
-        return db.airports.find({"Time.Month": mes, "Time.Year": anno, "Airport.Code": codigo}, {_id: 0, "Statistics": 1});
-    else
-        return db.airports.find({"Time.Month": mes, "Time.Year": anno, "Airport.Code": codigo}, columnas)
-}
-// Prueba 1
-obtener_vuelos_mes_anno(6, 2003, "CLT")
-
-// Prueba 2
-obtener_vuelos_mes_anno(6, 2003, "CLT", {"Statistics.Flights": 1})
-
-// ------------------------------------ OPERACIONES CRUD ------------------------------------
-// CONSULTA 1. Obtener los N primeros aeropuertos con menos minutos de demora en un anno determinado
-function obtener_aeropuertos_menos_demora(anno, top) {
-    var opcion = {"Statistics.Minutes Delayed.Total": -1}
-    return db.airports.find({"Time.Year": anno}, {_id: 0 , "Airport.Name": 1, "Statistics.Minutes Delayed.Total": 1}).sort(opcion).limit(top).map( documento => 
-      ({ aeropuerto: documento['Airport']['Name'],
-         minutos: documento['Statistics']['Minutes Delayed']['Total']
-          
-      })
-    )
-}
-// Prueba
-obtener_aeropuertos_menos_demora(2016, 3)
 
 // Sin embargo, tenemos un problema. El campo con las companias de vuelo estan en String, y nos gustaria modificarlo
 // Actualizar el campo Carriers.Names, cambiando el string a formato array
 var companias_aereas = {$split: ["$Statistics.Carriers.Names", ","]}
 var project = {"Statistics.Carriers.Names": companias_aereas}
 var fase1 = {$addFields: project}
-var fase2 = {$out: "airports_modificado"}
+var fase2 = {$out: "airports"}
 db.airports.aggregate(fase1, fase2)
-
-// En airports_modificado se encuentra el JSON con los nombres de las companias en formato array
-db.airports_modificado.find()
 
 // Por otro lado, vemos que tanto los campos "Carriers", "Flights" como "Minutes Delayed"
 // presentan un campo denominado "Total". Antes de trabajar con dicho campo, vamos a comprobar
 // que se trata del total de companias, vuelos y minutos de demora, respectivamente
 
 // Carriers
-db.airports_modificado.find().size()
 // Hay 4408 campos "Total"
 var condicion = [{$eq: [ {$size: "$Statistics.Carriers.Names"}, "$Statistics.Carriers.Total"]}, 1, 0]
 var coincidentes =  {"Coincidentes": {$cond: condicion}}
@@ -76,7 +47,7 @@ var fase1 = {$project: coincidentes}
 var group = {_id: null, SumCoincidentes: {$sum: "$Coincidentes"}}
 var fase2 = {$group: group}
 var fase3 = {$project: {_id: 0}}
-db.airports_modificado.aggregate([fase1, fase2, fase3])
+db.airports.aggregate([fase1, fase2, fase3])
 
 // Flights y Minutes Delayed
 function comprobar_total(raiz, claves, campo_total) {
@@ -89,7 +60,7 @@ function comprobar_total(raiz, claves, campo_total) {
     var group = {_id: null, SumCoincidentes: {$sum: "$Coincidentes"}};
     var fase2 = {$group: group};
     var fase3 = {$project: {_id: 0}};
-    return db.airports_modificado.aggregate([fase1, fase2, fase3]);
+    return db.airports.aggregate([fase1, fase2, fase3]);
 }
 comprobar_total("$Statistics.Flights.", ["Cancelled", "Delayed", "Diverted", "On Time"], "$Statistics.Flights.Total");
 comprobar_total("$Statistics.Minutes Delayed.", ["Carrier", "Late Aircraft", "National Aviation System", "Security", "Weather"], "$Statistics.Minutes Delayed.Total");
@@ -103,77 +74,66 @@ var fase1 = {$match: {$expr: condicion}}
 var total = {"Statistics.Minutes Delayed.Total": suma}
 var fase2 = {$addFields: total}
 var fase3 = {$project: {_id:1, total: "$Statistics.Minutes Delayed.Total"}}
-db.airports_modificado.aggregate([fase1, fase2, fase3])
 
 // Para corregirlos, mediante un updateMany actualizamos aquellas filas cuyo campo "total" no sea valido
-db.airports_modificado.aggregate([fase1, fase2, fase3]).forEach(function(id){
-    db.airports_modificado.updateMany({"_id": id._id}, {$set: {"Statistics.Minutes Delayed.Total": id.total}})
+db.airports.aggregate([fase1, fase2, fase3]).forEach(function(id){
+    db.airports.updateMany({"_id": id._id}, {$set: {"Statistics.Minutes Delayed.Total": id.total}})
 })
-
-// Insertar un nuevo campo, denominado "Total", que calcula el numero total de demoras en los vuelos
-var raiz = "$Statistics.Delays."
-var array_demoras = [raiz.concat("Carrier"), raiz.concat("Late Aircraft"), raiz.concat("National Aviation System"), raiz.concat("Security"), raiz.concat("Weather")]
-var suma = {$sum: array_demoras}
-var total = {"Statistics.Delays.Total": suma}
-var fase1 = {$set: total}
-var fase2 = {$out: "airports_modificado"}
-db.airports_modificado.aggregate([fase1, fase2])
-
-// Ahora, una vez anadidos los campos "Total", podemos hacer varias consultas
 
 // --------------------------------- OPERACIONES CRUD + AGGREGATE -------------------------------------------------
 // -----------------------------------------------find()-----------------------------------------------------------
 // CONSULTA 1. Consultar el codigo y nombre del aeropuerto con el mayor valor en una categoria, en un mes y anno en particular
-function mayor_valor_categoria(mes, anno, categoria) {
-    var valor = "$".concat(categoria.toString())
+function mayor_valor_categoria(mes, anno, campo) {
+    var valor = "$".concat(campo.toString())
     var query = {"Time.Year": anno, "Time.Month": { $eq: mes}}
     var select = {_id: 0, "Code": 1, "Airport.Code": 1, "Airport.Name": 1, "Total" : valor}
-    return db.airports_modificado.find(query, select).sort({[categoria] : -1]}).limit(1)
+    return db.airports.find(query, select).sort({[campo] : -1]}).limit(5)
 }
 // Pruebas
 mayor_valor_categoria(1, 2010, "Statistics.Flights.Total")
 // Coincidente con el tiroteo producido en el aeropuerto internacional de Los Angeles en noviembre del anno 2013
 // URL: https://en.wikipedia.org/wiki/2013_Los_Angeles_International_Airport_shooting
 mayor_valor_categoria(11, 2013, "Statistics.Delays.Security")
+mayor_valor_categoria(11, 2013, "Statistics.Flights.Diverted")
 
 // aggregate()
-// CONSULTA 2. Analizar el numero de vuelos realizados en cada anno, entre el anno 2003 y 2016
+// CONSULTA 2. Analizar el numero total de vuelos realizados en cada anno
 var subquery = {$sum: "$Statistics.Flights.Total"}
 var query = {_id: "$Time.Year", vuelos: subquery}
 var fase1 = {$group: query}
 var fase2 = {$sort: {"_id": 1}}
-db.airports_modificado.aggregate([fase1, fase2])
+db.airports.aggregate([fase1, fase2])
 
 // Para calcular la diferencia de vuelos entre dos años
-db.airports_modificado.aggregate([fase1, fase2]).forEach(function(doc) {
+db.airports.aggregate([fase1, fase2]).forEach(function(doc) {
     var query_aux = {"$gt": doc._id}
     var subfase = {$match: {"Time.Year": query_aux}}
-    db.airports_modificado.aggregate([subfase, fase1, fase2]).limit(1).forEach(function(doc_aux) {
+    db.airports.aggregate([subfase, fase1, fase2]).limit(1).forEach(function(doc_aux) {
         var diferencia = doc_aux.vuelos - doc.vuelos
         var texto = ("Diferencia entre " + doc._id + " y " + doc_aux._id).toString()
         print(texto + ": " + diferencia)
     })
 })
 
-// CONSULTA 3. Consultar el top 10 aeropuertos con el mayor valor en una categoria, junto con su porcentaje
-function aeropuerto_mes_anno(categoria) {
-    var fase1 = {$group: {_id: null, total: {$sum: "$".concat(categoria)}, aeropuerto: { $push: "$$ROOT" }}}
+// CONSULTA 3. Consultar el top 10 aeropuertos con el mayor valor en un campo, junto con su porcentaje
+function aeropuerto_mes_anno(campo) {
+    var fase1 = {$group: {_id: null, total: {$sum: campo}, aeropuerto: { $push: "$$ROOT" }}}
     var fase2 = {$unwind: "$aeropuerto"}
-    var fase3 = {$project: {_id: "$aeropuerto._id", "Airport": "$aeropuerto.Airport", "Time": "$aeropuerto.Time", "Statistics": "$aeropuerto.Statistics", "total": "$total"}}
-    var clave = "$".concat(categoria)
-    var group = {_id: "$Airport.Name", vuelos: {$sum: clave}, total: {$first: "$total"}}
+    var fase3 = {$project: {_id: "$aeropuerto._id", "Airport": "$aeropuerto.Airport", "Statistics": "$aeropuerto.Statistics", "total": "$total"}}
+    var group = {_id: "$Airport.Name", vuelos: {$sum: campo}, total: {$first: "$total"}}
     var fase4 = {$group: group}
     var fase5 = {$sort: {"vuelos": -1}}
     var porcentaje = {"$multiply": [{"$divide": ["$vuelos", "$total"]}, 100]}
     var field = {"porcentaje (%)": porcentaje}
     var fase6 = {$addFields: field}
     var fase7 = {$project: {"total": 0}}
-    return db.airports_modificado.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7]).limit(10)
+    return db.airports.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7]).limit(10)
 }
-aeropuerto_mes_anno("Statistics.Flights.Cancelled")
-aeropuerto_mes_anno("Statistics.Flights.Delayed")
-aeropuerto_mes_anno("Statistics.Flights.On Time")
-aeropuerto_mes_anno("Statistics.Flights.Total")
+aeropuerto_mes_anno("$Statistics.Flights.Cancelled")
+aeropuerto_mes_anno("$Statistics.Flights.On Time")
+aeropuerto_mes_anno("$Statistics.Flights.Delayed")
+aeropuerto_mes_anno("$Statistics.Delays.Weather")
+aeropuerto_mes_anno("$Statistics.Minutes Delayed.Weather")
 
 // CONSULTA 4. Analizando el resultado anterior, quisieramos obtener el mes que mas cancelaciones se realizan de media por aeropuerto
 var ids = {id_aeropuerto: "$Airport.Name", id_mes: "$Time.Month"}
@@ -255,9 +215,11 @@ db.codigos_iata.find()
 db.codigos_iata.updateMany({}, {$mul: {"elevation_ft": Double(0.3048)}})
 db.codigos_iata.updateMany({}, {$rename: {"elevation_ft": "elevation_meters"}})
 
-// Aeropuerto con mayor elevacion
+// Aeropuerto situado a menos de 10 metros de altura
 var sort = {"elevation_meters": -1}
-db.codigos_iata.find({}, {_id: 0, "name": 1, "elevation_meters": 1}).sort(sort).limit(1)
+var condicion = {"elevation_meters": {$lt: 10}}
+var proyeccion = {_id: 0, "name": 1, "elevation_meters": 1}
+db.codigos_iata.find(condicion, proyeccion).sort(sort)
 
 // A continuacion, creamos el campo "position", con el objetivo de crear un campo con las coordenadas
 var coordenadas = {$split: ["$coordinates", ","]}
@@ -277,26 +239,42 @@ var fase2 = {$addFields: { "Position": "$location.Position"}}
 var posicion = {$arrayElemAt: ["$Position", 0]}
 var fase3 = {$set: {"Position": posicion}}
 var fase4 = { $project: { location: 0} }
-var fase5 = {$out: "prueba"}
+var fase5 = {$out: "airports_modificado"}
 db.airports_modificado.aggregate([fase1, fase2, fase3, fase4, fase5])
 
 // Comprobacion
-db.prueba.find({"Position":{ $eq: null}}, {"Position": 1}).count()
+db.airports_modificado.find({"Position":{ $eq: null}}, {"Position": 1}).count()
 
 // Creamos un indice con el que consultar las coordenadas. Debe estar en formato 2dsphere
-db.prueba.getIndexes()
-db.prueba.createIndex( { Position : "2dsphere" } )
+db.airports_modificado.getIndexes()
+db.airports_modificado.createIndex( { Position : "2dsphere" } )
 
-db.prueba.aggregate(
-   {
-     $geoNear: {
+var parametros = {
         near: { type: "Point", coordinates: [ -73.99279 , 40.719296 ] },
         distanceField: "dist.calculated",
         maxDistance: 100000,
         includeLocs: "dist.location",
         spherical: true
-     }},
-     {
-         $group: {_id: "$dist.location"}
      }
-])
+var fase1 = {$geoNear: parametros}
+var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name"}}
+var fase2 = {$group: group}
+db.airports_modificado.aggregate([fase1,fase2])
+
+
+var parametros = {
+        near: { type: "Point", coordinates: [ -120.426935, 34.939985 ] },
+        distanceField: "dist.calculated",
+        key: "Position",
+        maxDistance: 1000000,
+        includeLocs: "dist.location",
+        spherical: true
+     }
+var fase1 = {$geoNear: parametros}
+var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, minutos: {$sum: "$Statistics.Minutes Delayed.Total"}, vuelos: {$sum: "$Statistics.Flights.Total"}}
+var fase2 = {$group: group}
+var project = {"_id": 1, "proporcion_minutos_vuelos": {$divide: ["$minutos", "$vuelos"]}}
+var fase3 = {$project: project}
+var cond = {$expr: {$lte: ["$proporcion_minutos_vuelos", 9]}}
+var fase4 = {$match: cond}
+db.airports_modificado.aggregate([fase1, fase2, fase3, fase4])
