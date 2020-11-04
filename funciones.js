@@ -151,12 +151,12 @@ var fase5 = {$group: nuevo_group}
 var merge = [ { aeropuerto: "$_id"}, "$parejas" ]
 var fase6 = { $replaceWith: { $mergeObjects: merge } }
 var fase7 = {$sort: {"media_cancelaciones": -1}}
-db.airports_modificado.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7])
+db.airports.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7])
 
 // Si lo agrupamos por meses
-var fase8 = {$group: {_id: "$mes", media_cancelaciones: {$sum: "$media_cancelaciones"}}}
-var fase9 = {$sort: {"media_cancelaciones": -1}}
-db.airports_modificado.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7, fase8, fase9])
+var fase1 = {$group: {_id: "$Time.Month", media_cancelaciones: {$avg: "$Statistics.Flights.Cancelled"}}}
+var fase2 = {$sort: {"media_cancelaciones": -1}}
+db.airports.aggregate([fase1, fase2])
 
 // CONSULTA 5. Analizar el numero medio de companias aereas que ha habido a lo largo de los annos
 var fase1 = {$group: {_id: "$Time.Year", companias: {$avg: "$Statistics.Carriers.Total"}}}
