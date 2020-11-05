@@ -237,19 +237,22 @@ db.codigos_iata.aggregate([fase1, fase2])
 // A continuacion, ligamos ambas colecciones, mediante la funcion $lookup
 var parametros = {from: "codigos_iata", localField: "Airport.Code", foreignField: "iata_code", as: "location"}
 var fase1 = {$lookup: parametros}
-var fase2 = {$addFields: { "Position": "$location.Position"}}
+var fase2 = {$addFields: {"Position": "$location.Position"}}
 var posicion = {$arrayElemAt: ["$Position", 0]}
 var fase3 = {$set: {"Position": posicion}}
 var fase4 = { $project: { location: 0} }
-var fase5 = {$out: "airports_modificado"}
-db.airports_modificado.aggregate([fase1, fase2, fase3, fase4, fase5])
+var fase5 = {$out: "airports"}
+db.airports.aggregate([fase1, fase2, fase3, fase4, fase5])
 
 // Comprobacion
-db.airports_modificado.find({"Position":{ $eq: null}}, {"Position": 1}).count()
+// Si no existen ...
+db.airports.find({"Position":{ $exists: false}}, {"Position": 1}).count()
+// Si estan a null ...
+db.airports.find({"Position":{ $eq: null}}, {"Position": 1}).count()
 
 // Creamos un indice con el que consultar las coordenadas. Debe estar en formato 2dsphere
-db.airports_modificado.getIndexes()
-db.airports_modificado.createIndex( { Position : "2dsphere" } )
+db.airports.getIndexes()
+db.airports.createIndex( { Position : "2dsphere" } )
 
 var parametros = {
         near: { type: "Point", coordinates: [ -73.99279 , 40.719296 ] },
@@ -259,9 +262,22 @@ var parametros = {
         spherical: true
      }
 var fase1 = {$geoNear: parametros}
-var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name"}}
+var suma_flights_delayed = {$sum: "$Statistics.Flights.Delayed"}
+var suma_delays_carrier = {$sum: "$Statistics.Delays.Carrier"}
+var suma_delays_late_aircraft = {$sum: "$Statistics.Delays.Late Aircraft"}
+var suma_delays_nas = {$sum: "$Statistics.Delays.National Aviation System"}
+var suma_delays_security = {$sum: "$Statistics.Delays.Security"}
+var suma_delays_weather = {$sum: "$Statistics.Delays.Weather"}
+
+var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name"}, "Flights_Delayed": suma_flights_delayed, "Delays_Carrier": suma_delays_carrier, 
+"Delays_Late_Aircraft": suma_delays_late_aircraft, "Delays_NAS": suma_delays_nas, "Delays_Security": suma_delays_security, "Delays_Weather": suma_delays_weather}
+var porcentaje_delays_carrier = {$divide: ["$Delays_Carrier", "$Flights_Delayed"]}
+var porcentaje_delays_late_aircraft = {$divide: ["$Delays_Late_Aircraft", "$Flights_Delayed"]}
+var porcentaje_delays_nas = {$divide: ["$Delays_NAS", "$Flights_Delayed"]}
+var porcentaje_delays_security = {$divide: ["$Delays_Security", "$Flights_Delayed"]}
+var porcentaje_delays_weather = {$divide: ["$Delays_Weather", "$Flights_Delayed"]}
 var fase2 = {$group: group}
-db.airports_modificado.aggregate([fase1,fase2])
+db.airports.aggregate([fase1,fase2])
 
 
 var parametros = {
