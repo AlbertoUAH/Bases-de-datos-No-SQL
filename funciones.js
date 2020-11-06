@@ -254,31 +254,21 @@ db.airports.find({"Position":{ $eq: null}}, {"Position": 1}).count()
 db.airports.getIndexes()
 db.airports.createIndex( { Position : "2dsphere" } )
 
-var parametros = {
-        near: { type: "Point", coordinates: [ -73.99279 , 40.719296 ] },
-        distanceField: "dist.calculated",
-        maxDistance: 100000,
-        includeLocs: "dist.location",
-        spherical: true
-     }
-var fase1 = {$geoNear: parametros}
-var suma_flights_delayed = {$sum: "$Statistics.Flights.Delayed"}
-var suma_delays_carrier = {$sum: "$Statistics.Delays.Carrier"}
-var suma_delays_late_aircraft = {$sum: "$Statistics.Delays.Late Aircraft"}
-var suma_delays_nas = {$sum: "$Statistics.Delays.National Aviation System"}
-var suma_delays_security = {$sum: "$Statistics.Delays.Security"}
-var suma_delays_weather = {$sum: "$Statistics.Delays.Weather"}
-
-var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name"}, "Flights_Delayed": suma_flights_delayed, "Delays_Carrier": suma_delays_carrier, 
-"Delays_Late_Aircraft": suma_delays_late_aircraft, "Delays_NAS": suma_delays_nas, "Delays_Security": suma_delays_security, "Delays_Weather": suma_delays_weather}
-var porcentaje_delays_carrier = {$divide: ["$Delays_Carrier", "$Flights_Delayed"]}
-var porcentaje_delays_late_aircraft = {$divide: ["$Delays_Late_Aircraft", "$Flights_Delayed"]}
-var porcentaje_delays_nas = {$divide: ["$Delays_NAS", "$Flights_Delayed"]}
-var porcentaje_delays_security = {$divide: ["$Delays_Security", "$Flights_Delayed"]}
-var porcentaje_delays_weather = {$divide: ["$Delays_Weather", "$Flights_Delayed"]}
-var fase2 = {$group: group}
-db.airports.aggregate([fase1,fase2])
-
+function calcular_distancia(campo) {
+    var parametros = {
+            near: { type: "Point", coordinates: [ -73.99279 , 40.719296 ] },
+            distanceField: "dist.calculated",
+            includeLocs: "dist.location",
+            spherical: true
+         }
+    var fase1 = {$geoNear: parametros}
+    var media_minutes_delayed = {$avg: campo}
+    var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, "Minutes_Delayed": media_minutes_delayed}
+    var fase2 = {$group: group}
+    var fase3 = {$sort: {"Minutes_Delayed": -1}}
+    return db.airports.aggregate([fase1, fase2, fase3]).limit(3)
+}
+calcular_distancia("$Statistics.Minutes Delayed.Carrier")
 
 var parametros = {
         near: { type: "Point", coordinates: [ -120.426935, 34.939985 ] },
@@ -289,10 +279,10 @@ var parametros = {
         spherical: true
      }
 var fase1 = {$geoNear: parametros}
-var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, minutos: {$sum: "$Statistics.Minutes Delayed.Total"}, vuelos: {$sum: "$Statistics.Flights.Total"}}
+var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, minutos: {$sum: "$Statistics.Minutes Delayed.Total"}, vuelos: {$sum: "$Statistics.Flights.Delayed"}}
 var fase2 = {$group: group}
 var project = {"_id": 1, "proporcion_minutos_vuelos": {$divide: ["$minutos", "$vuelos"]}}
 var fase3 = {$project: project}
-var cond = {$expr: {$lte: ["$proporcion_minutos_vuelos", 9]}}
+var cond = {$expr: {$lte: ["$proporcion_minutos_vuelos", 50]}}
 var fase4 = {$match: cond}
-db.airports_modificado.aggregate([fase1, fase2, fase3, fase4])
+db.airports.aggregate([fase1, fase2, fase3, fase4])
