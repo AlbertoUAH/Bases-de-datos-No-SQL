@@ -254,27 +254,36 @@ db.airports.find({"Position":{ $eq: null}}, {"Position": 1}).count()
 db.airports.getIndexes()
 db.airports.createIndex( { Position : "2dsphere" } )
 
+// CONSULTA 9. Consultar la distancia a los tres aeropuertos con menor media de minutos de demora en cada categoria
+// La ubicacion utilizada corresponde a la ciudad de Wichita (Kansas)
 function calcular_distancia(campo) {
     var parametros = {
-            near: { type: "Point", coordinates: [ -73.99279 , 40.719296 ] },
+            near: { type: "Point", coordinates: [ -97.347059 , 37.631635 ] },
             distanceField: "dist.calculated",
             includeLocs: "dist.location",
+            distanceMultiplier: 0.001,
             spherical: true
          }
     var fase1 = {$geoNear: parametros}
     var media_minutes_delayed = {$avg: campo}
     var group = {_id: {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, "Minutes_Delayed": media_minutes_delayed}
     var fase2 = {$group: group}
-    var fase3 = {$sort: {"Minutes_Delayed": -1}}
+    var fase3 = {$sort: {"Minutes_Delayed": 1}}
     return db.airports.aggregate([fase1, fase2, fase3]).limit(3)
 }
 calcular_distancia("$Statistics.Minutes Delayed.Carrier")
+calcular_distancia("$Statistics.Minutes Delayed.Late Aircraft")
+calcular_distancia("$Statistics.Minutes Delayed.National Aviation System")
+calcular_distancia("$Statistics.Minutes Delayed.Security")
+calcular_distancia("$Statistics.Minutes Delayed.Weather")
 
+// CONSULTA 10. Consultar los aeropuertos (a 500 km o menos de mi ubicacion) cuya proporcion minutos_demorados / vuelos_demorados sea igual o menor a 50
+// La ubicacion utilizada corresponde a la ciudad de Santa Maria (California)
 var parametros = {
         near: { type: "Point", coordinates: [ -120.426935, 34.939985 ] },
         distanceField: "dist.calculated",
         key: "Position",
-        maxDistance: 1000000,
+        maxDistance: 500000,
         includeLocs: "dist.location",
         spherical: true
      }
