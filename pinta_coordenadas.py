@@ -13,7 +13,8 @@ database = connection.practica_final
 def calcular_distancia(campo):
     """
     Funcion que calcular la distancia de los tres aeropuertos con menor
-    media de minutos de demora en funcion del campo elegido.
+    media de minutos de demora en funcion del campo elegido 
+    (CONSULTA 9 del script de MongoDB)
     Campo puede ser:
         "$Statistics.Minutes Delayed.Carrier"
         "$Statistics.Minutes Delayed.Late Aircraft"
@@ -50,12 +51,16 @@ def calcular_distancia(campo):
 
     m = folium.Map()
     # Con Marker creamos un marcador (punto) en el mapa
+    # Este primer marcador senala la posicion de referencia
     folium.Marker(
             location=coordinates[::-1],
             popup='You\'re right here',
             icon=folium.Icon(color='red'),
         ).add_to(m)
 
+    # Mediante un bucle, creamos un marcador por cada aeropuerto
+    # incluyendo en un pop-up tanto el nombre del aeropuerto (coordinate[1])
+    # como la media de minutos de demora (coordinate[2])
     for coordinate in list_coordinates:
         folium.Marker(
             location=coordinate[0][::-1],
@@ -65,6 +70,8 @@ def calcular_distancia(campo):
         aux_list = [coordinates[::-1], coordinate[0][::-1]]
 
         # Con PolyLine creamos una linea entre dos coordenadas
+        # incluyendo en un pop-up la distancia (en kilometros)
+        # redondeada a dos cifras decimales (coordinate[3])
         folium.PolyLine(
             aux_list,
             color = "red",
@@ -76,17 +83,17 @@ def calcular_distancia(campo):
     m.save('plot_data.html')
 
 # Pruebas - calcular_distancia
-#calcular_distancia("$Statistics.Minutes Delayed.Carrier")
-#calcular_distancia("$Statistics.Minutes Delayed.Late Aircraft")
-#calcular_distancia("$Statistics.Minutes Delayed.National Aviation System")
-#calcular_distancia("$Statistics.Minutes Delayed.Security")
-#calcular_distancia("$Statistics.Minutes Delayed.Weather")
+# calcular_distancia("$Statistics.Minutes Delayed.Carrier")
+# calcular_distancia("$Statistics.Minutes Delayed.Late Aircraft")
+# calcular_distancia("$Statistics.Minutes Delayed.National Aviation System")
+# calcular_distancia("$Statistics.Minutes Delayed.Security")
+# calcular_distancia("$Statistics.Minutes Delayed.Weather")
 
 def aeropuerto_mas_cercano():
     """
     Funcion que calcula el aeropuerto mas cercano (a 500 km o menos de distancia)
     cuya proporcion minutos_demora / vuelos_demorados sea igual o inferior a 50
-
+    (CONSULTA 10 del script de MongoDB)
     Coordenada utilizada: Santa Maria (California)
 
     IMPORTANTE: las coordenadas estan en el orden longitud, latitud; por lo que
@@ -144,4 +151,4 @@ def aeropuerto_mas_cercano():
     m.save('plot_data.html')
 
 # Prueba aeropuerto_mas_cercano
-aeropuerto_mas_cercano()
+# aeropuerto_mas_cercano()
