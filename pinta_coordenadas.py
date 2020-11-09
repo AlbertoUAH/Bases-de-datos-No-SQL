@@ -16,11 +16,11 @@ def calcular_distancia(campo):
     media de minutos de demora en funcion del campo elegido 
     (CONSULTA 9 del script de MongoDB)
     Campo puede ser:
-        "$Statistics.Minutes Delayed.Carrier"
-        "$Statistics.Minutes Delayed.Late Aircraft"
-        "$Statistics.Minutes Delayed.National Aviation System"
-        "$Statistics.Minutes Delayed.Security"
-        "$Statistics.Minutes Delayed.Weather"
+        "$Statistics.MinutesDelayed.Carrier"
+        "$Statistics.MinutesDelayed.LateAircraft"
+        "$Statistics.MinutesDelayed.NationalAviationSystem"
+        "$Statistics.MinutesDelayed.Security"
+        "$Statistics.MinutesDelayed.Weather"
     Coordenada utilizada: Wichita (Kansas)
 
     IMPORTANTE: las coordenadas estan en el orden longitud, latitud; por lo que
@@ -83,11 +83,11 @@ def calcular_distancia(campo):
     m.save('plot_data.html')
 
 # Pruebas - calcular_distancia
-# calcular_distancia("$Statistics.Minutes Delayed.Carrier")
-# calcular_distancia("$Statistics.Minutes Delayed.Late Aircraft")
-# calcular_distancia("$Statistics.Minutes Delayed.National Aviation System")
-# calcular_distancia("$Statistics.Minutes Delayed.Security")
-# calcular_distancia("$Statistics.Minutes Delayed.Weather")
+# calcular_distancia("$Statistics.MinutesDelayed.Carrier")
+# calcular_distancia("$Statistics.MinutesDelayed.LateAircraft")
+# calcular_distancia("$Statistics.MinutesDelayed.NationalAviationSystem")
+# calcular_distancia("$Statistics.MinutesDelayed.Security")
+# calcular_distancia("$Statistics.MinutesDelayed.Weather")
 
 def aeropuerto_mas_cercano():
     """
@@ -114,7 +114,7 @@ def aeropuerto_mas_cercano():
     {
         "$group": {
             "_id": {"Location": "$dist.location", "Airport": "$Airport.Name", "Distance": "$dist.calculated"}, 
-            "minutos": {"$sum": "$Statistics.Minutes Delayed.Total"}, 
+            "minutos": {"$sum": "$Statistics.MinutesDelayed.Total"}, 
             "vuelos": {"$sum": "$Statistics.Flights.Delayed"}
         }
     },
