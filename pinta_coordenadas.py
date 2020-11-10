@@ -107,6 +107,7 @@ def aeropuerto_mas_cercano():
             "distanceField": "dist.calculated",
             "key": "Position",
             "maxDistance": 500000,
+            "distanceMultiplier": 0.001,
             "includeLocs": "dist.location",
             "spherical": "true"
         }

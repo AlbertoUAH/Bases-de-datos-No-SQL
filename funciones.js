@@ -282,6 +282,7 @@ var parametros = {
         distanceField: "dist.calculated",
         key: "Position",
         maxDistance: 500000,
+	distanceMultiplier: 0.001,
         includeLocs: "dist.location",
         spherical: true
      }
