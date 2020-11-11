@@ -41,6 +41,7 @@ db.airports.updateMany({}, {$rename: {
     "Statistics.Delays.Late Aircraft": "Statistics.Delays.LateAircraft",
     "Statistics.Delays.National Aviation System": "Statistics.Delays.NationalAviationSystem"
 }})
+
 // Sin embargo, tenemos un problema. El campo con las companias de vuelo estan en String, y nos gustaria modificarlo
 // Actualizar el campo Carriers.Names, cambiando el string a formato array
 var companias_aereas = {$split: ["$Statistics.Carriers.Names", ","]}
@@ -50,8 +51,8 @@ var fase2 = {$out: "airports"}
 db.airports.aggregate(fase1, fase2)
 
 // Por otro lado, vemos que tanto los campos "Carriers", "Flights" como "Minutes Delayed"
-// presentan un campo denominado "Total". Antes de trabajar con dicho campo, vamos a comprobar
-// que se trata del total de companias, vuelos y minutos de demora, respectivamente
+// presentan un campo denominado "Total". Antes de trabajar con dichos campos, vamos a comprobar
+// que se tratan del total de companias, vuelos y minutos de demora, respectivamente
 
 // Carriers
 // Hay 4408 campos "Total"
@@ -83,7 +84,6 @@ comprobar_total("$Statistics.MinutesDelayed.", ["Carrier", "LateAircraft", "Nati
 var raiz = "$Statistics.MinutesDelayed."
 var array_minutos = [raiz.concat("Carrier"), raiz.concat("LateAircraft"), raiz.concat("NationalAviationSystem"), raiz.concat("Security"), raiz.concat("Weather")]
 var suma = {$sum: array_minutos}
-
 var condicion = {$ne: [suma, "$Statistics.MinutesDelayed.Total"]}
 var fase1 = {$match: {$expr: condicion}}
 var total = {"Statistics.MinutesDelayed.Total": suma}
