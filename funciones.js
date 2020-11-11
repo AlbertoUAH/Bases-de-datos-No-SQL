@@ -1,6 +1,6 @@
 use practica_final
 
-// Empezamos por unas consultas mas sencillas
+// Empezamos por una consultas sencilla
 // Contar el numero de documentos
 db.airports.count()
 
@@ -10,7 +10,7 @@ db.airports.updateMany({},{$unset: {"Time.Month Name": ""}})
 
 // Probamos a insertar un dato
 var aeropuerto = { "Code" : "SLC", "Name" : "Salt Lake City, UT: Salt Lake City International" }
-var tiempo = { "Month" : 1, "Year" : 2016 }
+var tiempo = { "Month" : 2, "Year" : 2016 }
 var demoras = { "Carrier" : 368, "Late Aircraft" : 549, "National Aviation System" : 253, "Security" : 9, "Weather" : 37 }
 var companias = {
 	"Names" : "American Airlines Inc.,Alaska Airlines Inc.,JetBlue Airways,Delta Air Lines Inc.,Frontier Airlines Inc.,SkyWest Airlines Inc.,United Air Lines Inc.,Southwest Airlines Co.",
@@ -22,7 +22,7 @@ var estadisticas = { "# of Delays": demoras, "Carriers": companias, "Flights": v
 db.airports.insertOne({"Airport": aeropuerto, "Time": tiempo, "Statistics": estadisticas})
 
 // Para no afectar a las estadisticas y las consultas, lo volvemos a eliminar
-db.airports.remove({"_id": {$eq: ObjectId("5fa2d4a72d8abb02bb66793e")}})
+db.airports.remove({"Time.Year": 2016, "Time.Month": 2})
 
 // Renombramos el campo # of Delays a Delays
 db.airports.updateMany({}, {$rename: {
@@ -51,8 +51,8 @@ var fase2 = {$out: "airports"}
 db.airports.aggregate(fase1, fase2)
 
 // Por otro lado, vemos que tanto los campos "Carriers", "Flights" como "Minutes Delayed"
-// presentan un campo denominado "Total". Antes de trabajar con dichos campos, vamos a comprobar
-// que se tratan del total de companias, vuelos y minutos de demora, respectivamente
+// presentan un campo denominado "Total". Antes de trabajar con dicho campo, vamos a comprobar
+// que se trata del total de companias, vuelos y minutos de demora, respectivamente
 
 // Carriers
 // Hay 4408 campos "Total"
@@ -84,6 +84,7 @@ comprobar_total("$Statistics.MinutesDelayed.", ["Carrier", "LateAircraft", "Nati
 var raiz = "$Statistics.MinutesDelayed."
 var array_minutos = [raiz.concat("Carrier"), raiz.concat("LateAircraft"), raiz.concat("NationalAviationSystem"), raiz.concat("Security"), raiz.concat("Weather")]
 var suma = {$sum: array_minutos}
+
 var condicion = {$ne: [suma, "$Statistics.MinutesDelayed.Total"]}
 var fase1 = {$match: {$expr: condicion}}
 var total = {"Statistics.MinutesDelayed.Total": suma}
@@ -161,7 +162,7 @@ var fase1 = {$group: {_id: "$Time.Month", "media_cancelaciones": {$avg: "$Statis
 var fase2 = {$sort: {"media_cancelaciones": -1}}
 db.airports.aggregate([fase1, fase2])
 
-// CONSULTA 5. Obtener el aeropuerto con mayor y menor proporcion minutos_demora / total_demoras
+// CONSULTA 5. Obtener el aeropuerto con mayor y menor proporcion minutos_demora / total_demoras (solo se muestra la salida en JSON en NoSQLBooster)
 var suma_delays = {$sum: "$Statistics.Flights.Delayed"}
 var suma_minutes_delayed = {$sum: "$Statistics.MinutesDelayed.Total"}
 var group = {_id: "$Airport.Name", minutes_delayed: suma_minutes_delayed, delays: suma_delays }
@@ -215,7 +216,7 @@ db.airports.aggregate([fase1, fase2, fase3, fase4, fase5, fase6, fase7])
 // Consultamos el primer documento para ver cada uno de los campos
 db.codigos_iata.find().limit(1)
 
-// Aeropuerto situado a menos de 10 metros de altura
+// Aeropuerto situado a mas de 1 km de altura (3280.80 pies)
 var sort = {"elevation_meters": -1}
 var condicion = {"elevation_ft": {$gt: 3280.80}}
 var proyeccion = {_id: 0, "name": 1, "elevation_ft": 1}
@@ -282,8 +283,8 @@ var parametros = {
         distanceField: "dist.calculated",
         key: "Position",
         maxDistance: 500000,
-	distanceMultiplier: 0.001,
         includeLocs: "dist.location",
+        distanceMultiplier: 0.001,
         spherical: true
      }
 var fase1 = {$geoNear: parametros}

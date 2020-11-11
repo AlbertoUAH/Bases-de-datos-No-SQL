@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.6.0/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://rawcdn.githack.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css"/>
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_c19a15dd53154c01978748cd02a59825 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+            </style>
+        
+</head>
+<body>    
+    
+            <div class="folium-map" id="map_c19a15dd53154c01978748cd02a59825" ></div>
+        
+</body>
+<script>    
+    
+            var map_c19a15dd53154c01978748cd02a59825 = L.map(
+                "map_c19a15dd53154c01978748cd02a59825",
+                {
+                    center: [0, 0],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 1,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_df41ad842305411d82f7ac3793e9d33f = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+            var marker_10b391dc10074d2abff42f8fa013b1ba = L.marker(
+                [34.939985, -120.426935],
+                {}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+            var icon_82d1dc04d41c4565bfd7d35de388ff43 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "red", "prefix": "glyphicon"}
+            );
+            marker_10b391dc10074d2abff42f8fa013b1ba.setIcon(icon_82d1dc04d41c4565bfd7d35de388ff43);
+        
+    
+        var popup_bbb566d12b7e4252803aca9ec1a5ae30 = L.popup({"maxWidth": "100%"});
+
+        
+            var html_1f9a920b0de140cf98527a7c8fb371a5 = $(`<div id="html_1f9a920b0de140cf98527a7c8fb371a5" style="width: 100.0%; height: 100.0%;">You're right here</div>`)[0];
+            popup_bbb566d12b7e4252803aca9ec1a5ae30.setContent(html_1f9a920b0de140cf98527a7c8fb371a5);
+        
+
+        marker_10b391dc10074d2abff42f8fa013b1ba.bindPopup(popup_bbb566d12b7e4252803aca9ec1a5ae30)
+        ;
+
+        
+    
+    
+            var marker_04f2240e3f57433d95d6d8638bf83945 = L.marker(
+                [32.7336006165, -117.190002441],
+                {}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+            var icon_01c45aefe2654c799da46c3bf13fd3dc = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_04f2240e3f57433d95d6d8638bf83945.setIcon(icon_01c45aefe2654c799da46c3bf13fd3dc);
+        
+    
+        var popup_cc7e78f1ad6349919bca002b71d01656 = L.popup({"maxWidth": "100%"});
+
+        
+            var html_b05bf3c57a38455eb357573c0950077d = $(`<div id="html_b05bf3c57a38455eb357573c0950077d" style="width: 100.0%; height: 100.0%;">San Diego, CA: San Diego International - 46.93</div>`)[0];
+            popup_cc7e78f1ad6349919bca002b71d01656.setContent(html_b05bf3c57a38455eb357573c0950077d);
+        
+
+        marker_04f2240e3f57433d95d6d8638bf83945.bindPopup(popup_cc7e78f1ad6349919bca002b71d01656)
+        ;
+
+        
+    
+    
+            var poly_line_485d0cf3470446bf8c7865a4dbd7a0fc = L.polyline(
+                [[34.939985, -120.426935], [32.7336006165, -117.190002441]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+        var popup_32cf9e22d0894ab09f674afece3761f2 = L.popup({"maxWidth": "100%"});
+
+        
+            var html_2edd4ba7fef347e89aac2a12b3d73a8c = $(`<div id="html_2edd4ba7fef347e89aac2a12b3d73a8c" style="width: 100.0%; height: 100.0%;">387.13 km.</div>`)[0];
+            popup_32cf9e22d0894ab09f674afece3761f2.setContent(html_2edd4ba7fef347e89aac2a12b3d73a8c);
+        
+
+        poly_line_485d0cf3470446bf8c7865a4dbd7a0fc.bindPopup(popup_32cf9e22d0894ab09f674afece3761f2)
+        ;
+
+        
+    
+    
+            var marker_93b98ae37dbb47bc8ba91698193bba26 = L.marker(
+                [36.08010101, -115.1520004],
+                {}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+            var icon_47937ecb2c064e68b22c19f3b6cf1e26 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_93b98ae37dbb47bc8ba91698193bba26.setIcon(icon_47937ecb2c064e68b22c19f3b6cf1e26);
+        
+    
+        var popup_c0cc5f4e8bd24634bf65d16c5501dd0d = L.popup({"maxWidth": "100%"});
+
+        
+            var html_64595ce64101421f9c4db57456f12250 = $(`<div id="html_64595ce64101421f9c4db57456f12250" style="width: 100.0%; height: 100.0%;">Las Vegas, NV: McCarran International - 49.13</div>`)[0];
+            popup_c0cc5f4e8bd24634bf65d16c5501dd0d.setContent(html_64595ce64101421f9c4db57456f12250);
+        
+
+        marker_93b98ae37dbb47bc8ba91698193bba26.bindPopup(popup_c0cc5f4e8bd24634bf65d16c5501dd0d)
+        ;
+
+        
+    
+    
+            var poly_line_b6aa7c310b5a4af4a01a0c233ce95dca = L.polyline(
+                [[34.939985, -120.426935], [36.08010101, -115.1520004]],
+                {"bubblingMouseEvents": true, "color": "red", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "red", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1.0, "smoothFactor": 1.0, "stroke": true, "weight": 3}
+            ).addTo(map_c19a15dd53154c01978748cd02a59825);
+        
+    
+        var popup_2ea9f93db95b4b948e7e1c6854b1acf3 = L.popup({"maxWidth": "100%"});
+
+        
+            var html_2f0df10e4052472bb17772d0e9f848d6 = $(`<div id="html_2f0df10e4052472bb17772d0e9f848d6" style="width: 100.0%; height: 100.0%;">494.48 km.</div>`)[0];
+            popup_2ea9f93db95b4b948e7e1c6854b1acf3.setContent(html_2f0df10e4052472bb17772d0e9f848d6);
+        
+
+        poly_line_b6aa7c310b5a4af4a01a0c233ce95dca.bindPopup(popup_2ea9f93db95b4b948e7e1c6854b1acf3)
+        ;
+
+        
+    
+</script>
